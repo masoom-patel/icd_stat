@@ -305,7 +305,10 @@
             top: 0;
             z-index: 10;
         }
-
+        .code-suggestion.highlighted {
+            background-color: #667eea;
+            color: white;
+        }
         .predictions-table tr:hover {
             background: #f8f9fa;
         }
@@ -623,6 +626,8 @@
     <script>
         // Available codes for autocomplete
         const availableCodes = {{ available_codes | tojson }};
+        let selectedSuggestionIndex = -1;
+        let currentMatches = [];
         
         // DOM elements
         const icdCodesInput = document.getElementById('icdCodes');
@@ -643,18 +648,64 @@
                     code.toLowerCase().includes(lastCode)
                 ).slice(0, 15);
                 
+                currentMatches = matches;
+                selectedSuggestionIndex = -1;
+                
                 if (matches.length > 0) {
-                    codeSuggestions.innerHTML = matches.map(code => 
-                        `<div class="code-suggestion" onclick="selectCode('${code}')">${code}</div>`
+                    codeSuggestions.innerHTML = matches.map((code, index) => 
+                        `<div class="code-suggestion" data-index="${index}" onclick="selectCode('${code}')">${code}</div>`
                     ).join('');
                     codeSuggestions.style.display = 'block';
                 } else {
                     codeSuggestions.style.display = 'none';
+                    currentMatches = [];
                 }
             } else {
                 codeSuggestions.style.display = 'none';
+                currentMatches = [];
+                selectedSuggestionIndex = -1;
             }
         });
+        icdCodesInput.addEventListener('keydown', function(e) {
+            if (codeSuggestions.style.display === 'block' && currentMatches.length > 0) {
+                switch(e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        selectedSuggestionIndex = (selectedSuggestionIndex + 1) % currentMatches.length;
+                        updateSuggestionHighlight();
+                        break;
+                        
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        selectedSuggestionIndex = selectedSuggestionIndex <= 0 ? currentMatches.length - 1 : selectedSuggestionIndex - 1;
+                        updateSuggestionHighlight();
+                        break;
+                        
+                    case 'Enter':
+                        e.preventDefault();
+                        if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < currentMatches.length) {
+                            selectCode(currentMatches[selectedSuggestionIndex]);
+                        }
+                        break;
+                        
+                    case 'Escape':
+                        codeSuggestions.style.display = 'none';
+                        currentMatches = [];
+                        selectedSuggestionIndex = -1;
+                        break;
+                }
+            }
+        });
+        function updateSuggestionHighlight() {
+            const suggestions = codeSuggestions.querySelectorAll('.code-suggestion');
+            suggestions.forEach((suggestion, index) => {
+                if (index === selectedSuggestionIndex) {
+                    suggestion.classList.add('highlighted');
+                } else {
+                    suggestion.classList.remove('highlighted');
+                }
+            });
+        }
 
         function selectCode(code) {
             const currentInput = icdCodesInput.value;
@@ -669,13 +720,16 @@
             
             icdCodesInput.value = codes.join(', ') + ', ';
             codeSuggestions.style.display = 'none';
+            currentMatches = [];
+            selectedSuggestionIndex = -1;
             icdCodesInput.focus();
         }
-
         // Hide suggestions when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.input-group')) {
                 codeSuggestions.style.display = 'none';
+                currentMatches = [];
+                selectedSuggestionIndex = -1;
             }
         });
 

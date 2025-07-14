@@ -11,10 +11,14 @@ from werkzeug.utils import secure_filename
 import json
 import tempfile
 warnings.filterwarnings('ignore')
+import threading
+import webbrowser
+
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key
-
+def open_browser():
+    webbrowser.open_new("http://127.0.0.1:5000")
 class DiseaseProbabilityCalculator:
     def __init__(self, csv_data=None):
         """
@@ -492,7 +496,7 @@ class DiseaseProbabilityCalculator:
         summary_df.to_excel(writer, sheet_name='Summary', index=False)
     
     def create_probability_sheet(self, writer, results, input_codes):
-        """Create detailed probability results sheet with HCC information and deduplication"""
+        """Create detailed probability results sheet with HCC information and ICD descriptions"""
         prob_data = []
         
         for pattern, disease_probs in results.items():
@@ -501,6 +505,7 @@ class DiseaseProbabilityCalculator:
                     'Pattern': ' + '.join(pattern),
                     'Pattern_Size': len(pattern),
                     'Predicted_Disease': disease,
+                    'ICD_Description': prob_info['hcc_info']['description'],  # Added ICD description
                     'Probability': prob_info['probability'],
                     'Patients_With_Disease': prob_info['patients_with_disease'],
                     'Total_Patients_With_Pattern': prob_info['total_patients_with_pattern'],
@@ -524,6 +529,7 @@ class DiseaseProbabilityCalculator:
                 'Pattern': 'NOTE: Deduplication applied - each disease appears only once',
                 'Pattern_Size': '',
                 'Predicted_Disease': 'with highest confidence prediction kept',
+                'ICD_Description': '',
                 'Probability': '',
                 'Patients_With_Disease': '',
                 'Total_Patients_With_Pattern': '',
@@ -538,7 +544,7 @@ class DiseaseProbabilityCalculator:
             prob_df.to_excel(writer, sheet_name='Probability_Results_HCC', index=False)
     
     def _deduplicate_excel_data(self, prob_data):
-        """Deduplicate Excel data by disease"""
+        """Deduplicate Excel data by disease - Updated to preserve ICD_Description"""
         # Group by disease
         disease_groups = defaultdict(list)
         for item in prob_data:
@@ -559,7 +565,7 @@ class DiseaseProbabilityCalculator:
         return deduplicated_data
     
     def create_hcc_analysis_sheet(self, writer, results, input_codes):
-        """Create HCC-specific analysis sheet with deduplication"""
+        """Create HCC-specific analysis sheet with ICD descriptions"""
         hcc_data = []
         
         # Collect HCC information for analysis
@@ -569,6 +575,7 @@ class DiseaseProbabilityCalculator:
                 hcc_data.append({
                     'Pattern': ' + '.join(pattern),
                     'Predicted_Disease': disease,
+                    'ICD_Description': hcc_info['description'],  # Added ICD description
                     'Probability': prob_info['probability'],
                     'CMS_HCC_ESRD_V24': hcc_info['HCC_ESRD_V24'],
                     'CMS_HCC_V24': hcc_info['HCC_V24'],
@@ -582,6 +589,7 @@ class DiseaseProbabilityCalculator:
             deduplicated_hcc_data = self._deduplicate_excel_data([{
                 'Pattern': item['Pattern'],
                 'Predicted_Disease': item['Predicted_Disease'],
+                'ICD_Description': item['ICD_Description'],  # Include in deduplication
                 'Probability': item['Probability'],
                 'CMS_HCC_ESRD_V24': item['CMS_HCC_ESRD_V24'],
                 'CMS_HCC_V24': item['CMS_HCC_V24'],
@@ -596,6 +604,7 @@ class DiseaseProbabilityCalculator:
                 final_hcc_data.append({
                     'Pattern': item['Pattern'],
                     'Predicted_Disease': item['Predicted_Disease'],
+                    'ICD_Description': item['ICD_Description'],  # Include description
                     'Probability': item['Probability'],
                     'CMS_HCC_ESRD_V24': item['CMS_HCC_ESRD_V24'],
                     'CMS_HCC_V24': item['CMS_HCC_V24'],
@@ -608,7 +617,7 @@ class DiseaseProbabilityCalculator:
             
             # Sort by HCC categories and probability
             hcc_df = hcc_df.sort_values(['CMS_HCC_V28', 'CMS_HCC_V24', 'Probability'], 
-                                      ascending=[True, True, False])
+                                    ascending=[True, True, False])
             hcc_df.to_excel(writer, sheet_name='HCC_Analysis', index=False)
             
             # Create HCC summary statistics using deduplicated data
@@ -632,6 +641,7 @@ class DiseaseProbabilityCalculator:
             # Save HCC summary
             hcc_summary_df = pd.DataFrame(hcc_summary, columns=['Category', 'Value'])
             hcc_summary_df.to_excel(writer, sheet_name='HCC_Summary', index=False)
+
     
     def create_patient_details_sheet(self, writer, results, input_codes):
         """Create detailed patient information with Member IDs"""
@@ -665,7 +675,7 @@ class DiseaseProbabilityCalculator:
             patient_df.to_excel(writer, sheet_name='Patient_Details', index=False)
     
     def create_disease_pairings_sheet(self, writer, results, input_codes):
-        """Create disease pairings analysis sheet with deduplication"""
+        """Create disease pairings analysis sheet with ICD descriptions"""
         pairings_data = []
         
         # Analyze co-occurrence patterns
@@ -693,11 +703,15 @@ class DiseaseProbabilityCalculator:
             total_patients = len(patients_with_pattern)
             for disease_combo, count in disease_combinations.items():
                 if count >= 4:  # Apply same minimum criteria
-                    # Get HCC information for single diseases or pairs
+                    # Get HCC and description information for single diseases or pairs
                     hcc_info = {}
+                    descriptions = []
                     combo_parts = disease_combo.split(' + ')
+                    
                     if len(combo_parts) == 1:
+                        # Single disease
                         hcc_info = self.get_hcc_info(combo_parts[0])
+                        descriptions.append(hcc_info['description'])
                     else:
                         # For pairs, get HCC info for each disease
                         hcc_info = {
@@ -707,10 +721,14 @@ class DiseaseProbabilityCalculator:
                         }
                         for disease in combo_parts:
                             disease_hcc = self.get_hcc_info(disease)
+                            descriptions.append(disease_hcc['description'])
                             for key in hcc_info:
                                 hcc_info[key].append(disease_hcc[key])
                         # Join HCC info for pairs
                         hcc_info = {key: ' & '.join([str(val) for val in hcc_info[key]]) for key in hcc_info}
+                    
+                    # Join descriptions
+                    combined_description = ' & '.join(descriptions)
                     
                     confidence = self._calculate_confidence(count, total_patients)
                     if confidence in ['High', 'Medium']:  # Only include High/Medium confidence
@@ -718,6 +736,7 @@ class DiseaseProbabilityCalculator:
                             'Base_Pattern': pattern_str,
                             'Base_Pattern_Size': len(pattern),
                             'Disease_Combination': disease_combo,
+                            'Disease_Description': combined_description,  # Added descriptions
                             'Occurrence_Count': count,
                             'Total_Patients_With_Pattern': total_patients,
                             'Co_occurrence_Rate': count / total_patients if total_patients > 0 else 0,
@@ -742,6 +761,7 @@ class DiseaseProbabilityCalculator:
                 'Base_Pattern': 'NOTE: Deduplication applied - each disease combination appears only once',
                 'Base_Pattern_Size': '',
                 'Disease_Combination': 'with highest confidence prediction kept',
+                'Disease_Description': '',
                 'Occurrence_Count': '',
                 'Total_Patients_With_Pattern': '',
                 'Co_occurrence_Rate': '',
@@ -755,6 +775,7 @@ class DiseaseProbabilityCalculator:
             }
             
             pairings_df.to_excel(writer, sheet_name='Disease_Pairings', index=False)
+
     def _deduplicate_pairings_data(self, pairings_data):
         """Deduplicate disease pairings data by Disease_Combination"""
         # Group by disease combination
@@ -933,4 +954,6 @@ def get_codes():
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+    threading.Timer(1.25, open_browser).start()
+    app.run(host='127.0.0.1', port=5000, use_reloader=False)
+

@@ -1,0 +1,16 @@
+# Ignore virtual environments
+venv/
+
+# Ignore PyInstaller output
+build/
+dist/
+*.spec
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS-specific
+.DS_Store
+Thumbs.db
