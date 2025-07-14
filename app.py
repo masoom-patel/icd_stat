@@ -57,60 +57,81 @@ class DiseaseProbabilityCalculator:
             print(f"Error loading HCC mapping: {str(e)}")
             self.hcc_mapping = None
     
+
     def get_hcc_info(self, icd_code):
         """Get HCC information for a given ICD code"""
         if self.hcc_mapping is None:
+            print(f"HCC mapping is None for code: {icd_code}")
             return {
+                'description': 'No HCC mapping loaded',
                 'HCC_ESRD_V24': 'N/A',
                 'HCC_V24': 'N/A', 
                 'HCC_V28': 'N/A'
             }
         
-        # Find matching row for the ICD code
-        # Assuming the ICD code column might be named 'ICDCode', 'ICD_Code', or similar
-        icd_columns = [col for col in self.hcc_mapping.columns if 'icd' in col.lower()]
-        
-        if not icd_columns:
-            return {
-                'HCC_ESRD_V24': 'N/A',
-                'HCC_V24': 'N/A',
-                'HCC_V28': 'N/A'
+        try:
+            # Debug: Print what we're looking for
+            print(f"Looking for ICD code: '{icd_code}'")
+            
+            # Find matching row for the ICD code
+            matching_rows = self.hcc_mapping[self.hcc_mapping['ICDCode'] == icd_code]
+            
+            print(f"Found {len(matching_rows)} matching rows")
+            
+            if matching_rows.empty:
+                # Debug: Try to find similar codes
+                similar_codes = self.hcc_mapping[self.hcc_mapping['ICDCode'].str.contains(icd_code, na=False)]
+                print(f"Similar codes found: {len(similar_codes)}")
+                if len(similar_codes) > 0:
+                    print(f"Similar codes: {similar_codes['ICDCode'].head(3).tolist()}")
+                
+                return {
+                    'description': 'Code not found in HCC mapping',
+                    'HCC_ESRD_V24': 'Not Found',
+                    'HCC_V24': 'Not Found',
+                    'HCC_V28': 'Not Found'
+                }
+            
+            row = matching_rows.iloc[0]
+            print(f"Found row: {row.to_dict()}")
+            
+            # Try different possible column names for description
+            description_value = 'N/A'
+            possible_desc_columns = ['Description', 'description', 'DESC', 'desc', 'DESCRIPTION', 'ICD_Description', 'icd_description']
+            
+            print(f"Available columns: {list(self.hcc_mapping.columns)}")
+            
+            for col in possible_desc_columns:
+                if col in self.hcc_mapping.columns:
+                    desc_val = row.get(col)
+                    print(f"Column '{col}' value: '{desc_val}' (type: {type(desc_val)})")
+                    if pd.notna(desc_val) and str(desc_val).strip():
+                        description_value = str(desc_val).strip()
+                        print(f"Using description from column '{col}': '{description_value}'")
+                        break
+            
+            # Extract HCC information using exact column names
+            hcc_info = {
+                'description': description_value,
+                'HCC_ESRD_V24': str(row['HCC_ESRD_V24']) if pd.notna(row.get('HCC_ESRD_V24')) else 'N/A',
+                'HCC_V24': str(row['HCC_V24']) if pd.notna(row.get('HCC_V24')) else 'N/A',
+                'HCC_V28': str(row['HCC_V28']) if pd.notna(row.get('HCC_V28')) else 'N/A'
             }
-        
-        icd_column = icd_columns[0]  # Use the first ICD column found
-        
-        # Find the row with matching ICD code
-        matching_rows = self.hcc_mapping[self.hcc_mapping[icd_column] == icd_code]
-        
-        if matching_rows.empty:
+            
+            print(f"Final HCC info: {hcc_info}")
+            return hcc_info
+            
+        except Exception as e:
+            print(f"Error in get_hcc_info for code {icd_code}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return {
-                'HCC_ESRD_V24': 'Not Found',
-                'HCC_V24': 'Not Found',
-                'HCC_V28': 'Not Found'
-            }
-        
-        row = matching_rows.iloc[0]
-        
-        # Extract HCC information - adjust column names as needed
-        hcc_info = {}
-        target_columns = [
-            'HCC_ESRD_V24',
-            'HCC_V24', 
-            'HCC_V28'
-        ]
-        
-        for col in target_columns:
-            if col in self.hcc_mapping.columns:
-                hcc_info[col] = row[col] if pd.notna(row[col]) else 'N/A'
-            else:
-                # Try to find similar column names
-                similar_cols = [c for c in self.hcc_mapping.columns if any(keyword in c.lower() for keyword in col.lower().split())]
-                if similar_cols:
-                    hcc_info[col] = row[similar_cols[0]] if pd.notna(row[similar_cols[0]]) else 'N/A'
-                else:
-                    hcc_info[col] = 'Column Not Found'
-        
-        return hcc_info
+                'description': f'Error: {str(e)}',
+                'HCC_ESRD_V24': 'Error',
+                'HCC_V24': 'Error',
+                'HCC_V28': 'Error'
+            }        
+
         
     def load_data(self):
         """Load and process the patient data"""
@@ -247,7 +268,7 @@ class DiseaseProbabilityCalculator:
             deduplicated_predictions.append(best_prediction)
         
         return deduplicated_predictions
-    
+
     def analyze_input_codes(self, input_codes):
         """Complete analysis for specific input codes with enhanced filtering and deduplication"""
         # Check if we have enough codes for meaningful patterns
@@ -292,7 +313,8 @@ class DiseaseProbabilityCalculator:
                     'pattern_size': len(pattern),
                     'hcc_esrd_v24': prob_info['hcc_info']['HCC_ESRD_V24'],
                     'hcc_v24': prob_info['hcc_info']['HCC_V24'],
-                    'hcc_v28': prob_info['hcc_info']['HCC_V28']
+                    'hcc_v28': prob_info['hcc_info']['HCC_V28'],
+                    'description': prob_info['hcc_info']['description']  # ← THIS WAS THE MISSING LINE!
                 })
         
         # DEDUPLICATION: Remove duplicate disease predictions

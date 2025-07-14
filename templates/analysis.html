@@ -499,7 +499,21 @@
             .predictions-table {
                 font-size: 0.8em;
             }
+            .predictions-table td.description {
+                max-width: 300px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
 
+            .predictions-table td.description:hover {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: inherit;
+                z-index: 10;
+                background: #f8f9fa;
+                position: relative;
+            }
             .predictions-table th,
             .predictions-table td {
                 padding: 8px 4px;
@@ -793,6 +807,7 @@
                                 <tr>
                                     <th>Pattern</th>
                                     <th>Predicted Disease</th>
+                                    <th>Description</th>
                                     <th>Probability</th>
                                     <th>Evidence</th>
                                     <th>Confidence</th>
@@ -808,6 +823,7 @@
                         <tr>
                             <td><strong>${pred.pattern}</strong><br><small>Size: ${pred.pattern_size}</small></td>
                             <td><code>${pred.predicts}</code></td>
+                            <td class="description">${pred.description || 'N/A'}</td>
                             <td>
                                 <div><strong>${(pred.probability * 100).toFixed(1)}%</strong></div>
                                 <div class="probability-bar">
@@ -816,7 +832,7 @@
                             </td>
                             <td>${pred.evidence}<br><small>${pred.patients_with_disease} patients</small></td>
                             <td><span class="confidence-badge ${confidenceClass}">${pred.confidence}</span></td>
-                    `;
+                   `;
                     
                     if (data.summary.hcc_mapping_available) {
                         resultsHTML += `
@@ -826,6 +842,7 @@
                             <td class="hcc-column">
                                 <span class="hcc-value">${pred.hcc_v28 || 'N/A'}</span>
                             </td>
+                       
                             <td class="hcc-column">
                                 <span class="hcc-value">${pred.hcc_esrd_v24 || 'N/A'}</span>
                             </td>
@@ -834,7 +851,7 @@
                     
                     resultsHTML += '</tr>';
                 });
-                
+                 
                 resultsHTML += '</tbody></table></div>';
                 
                 if (data.all_predictions.length > 50) {
