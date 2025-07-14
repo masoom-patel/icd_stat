@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease Probability Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .data-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .summary-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .summary-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .summary-card .label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .hcc-status {
+            border-left-color: #e74c3c;
+        }
+
+        .hcc-status.available {
+            border-left-color: #27ae60;
+        }
+
+        .analysis-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .filter-info h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .filter-info ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .filter-info li {
+            padding: 5px 0;
+            color: #34495e;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-info li::before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .code-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .code-suggestions {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 5px;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            position: relative;
+        }
+
+        .code-suggestion {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            transition: background-color 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-suggestion:hover {
+            background-color: #f8f9fa;
+        }
+
+        .code-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .export-btn {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .results-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 3px solid #667eea;
+            transition: transform 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .result-card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .result-card .label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .predictions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .predictions-table th,
+        .predictions-table td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .predictions-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .predictions-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .probability-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .probability-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .confidence-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .confidence-very-low {
+            background: #f1f3f4;
+            color: #5f6368;
+        }
+
+        .hcc-column {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        .hcc-value {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 1px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .pattern-group {
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .pattern-header {
+            background: #f8f9fa;
+            padding: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .pattern-content {
+            padding: 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .no-results i {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .data-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .analyze-btn,
+            .export-btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            .predictions-table {
+                font-size: 0.8em;
+            }
+
+            .predictions-table th,
+            .predictions-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='/'">← Back to Upload</button>
+            <h1>🏥 Disease Probability Analysis</h1>
+            <p>Advanced pattern analysis with HCC mapping and filtering criteria</p>
+        </div>
+
+        {% if data_loaded %}
+        <div class="data-summary">
+            <div class="summary-card">
+                <h3>📊 Total Patients</h3>
+                <div class="number">{{ "{:,}".format(total_patients) }}</div>
+                <div class="label">Unique patients in dataset</div>
+            </div>
+            <div class="summary-card">
+                <h3>📋 Total Records</h3>
+                <div class="number">{{ "{:,}".format(total_records) }}</div>
+                <div class="label">Individual diagnoses</div>
+            </div>
+            <div class="summary-card">
+                <h3>🔍 Unique Codes</h3>
+                <div class="number">{{ "{:,}".format(unique_codes) }}</div>
+                <div class="label">Different ICD codes</div>
+            </div>
+            <div class="summary-card hcc-status {% if hcc_mapping_loaded %}available{% endif %}">
+                <h3>🏷️ HCC Mapping</h3>
+                <div class="number">{% if hcc_mapping_loaded %}✓{% else %}✗{% endif %}</div>
+                <div class="label">{% if hcc_mapping_loaded %}Available{% else %}Not loaded{% endif %}</div>
+            </div>
+        </div>
+
+        <div class="analysis-section">
+            <h2 class="section-title">
+                🔍 Analyze Disease Patterns
+            </h2>
+            
+            <div class="filter-info">
+                <h4>📋 Analysis Criteria & Filters</h4>
+                <ul>
+                    <li>Minimum 2 diseases per pattern (enhanced pattern complexity)</li>
+                    <li>Minimum 4 patients per prediction (statistical significance)</li>
+                    <li>High and Medium confidence levels only (quality assurance)</li>
+                    {% if hcc_mapping_loaded %}
+                    <li>HCC mapping integration (CMS-HCC V24, V28, and ESRD models)</li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <form id="analysisForm">
+                <div class="input-group">
+                    <label for="icdCodes">
+                        📝 Enter ICD Codes (comma-separated):
+                    </label>
+                    <input type="text" id="icdCodes" name="codes" class="code-input" 
+                           placeholder="e.g., I10, E11.9, N18.6, I25.10" autocomplete="off">
+                    <div id="codeSuggestions" class="code-suggestions"></div>
+                    <small style="color: #7f8c8d; margin-top: 5px; display: block;">
+                        💡 Type to search from {{ "{:,}".format(unique_codes) }} available codes. 
+                        You can enter multiple codes separated by commas. Need at least 2 codes for meaningful patterns.
+                    </small>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="analyze-btn">
+                        🔍 Analyze Patterns
+                    </button>
+                    
+                    <button type="button" id="exportBtn" class="export-btn" style="display: none;">
+                        📊 Export to Excel
+                    </button>
+                </div>
+            </form>
+
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>🔄 Analyzing patterns and calculating probabilities...</p>
+                <small>This may take a moment for large datasets</small>
+            </div>
+
+            <div id="alertContainer"></div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <h2 class="section-title">
+                📊 Analysis Results
+            </h2>
+            
+            <div id="resultsSummary" class="results-summary">
+                <!-- Results summary will be populated here -->
+            </div>
+
+            <div id="resultsContent">
+                <!-- Detailed results will be populated here -->
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Available codes for autocomplete
+        const availableCodes = {{ available_codes | tojson }};
+        
+        // DOM elements
+        const icdCodesInput = document.getElementById('icdCodes');
+        const codeSuggestions = document.getElementById('codeSuggestions');
+        const analysisForm = document.getElementById('analysisForm');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resultsSection = document.getElementById('resultsSection');
+        const alertContainer = document.getElementById('alertContainer');
+        const exportBtn = document.getElementById('exportBtn');
+
+        // Autocomplete functionality
+        icdCodesInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const lastCode = query.split(',').pop().trim();
+            
+            if (lastCode.length > 0) {
+                const matches = availableCodes.filter(code => 
+                    code.toLowerCase().includes(lastCode)
+                ).slice(0, 15);
+                
+                if (matches.length > 0) {
+                    codeSuggestions.innerHTML = matches.map(code => 
+                        `<div class="code-suggestion" onclick="selectCode('${code}')">${code}</div>`
+                    ).join('');
+                    codeSuggestions.style.display = 'block';
+                } else {
+                    codeSuggestions.style.display = 'none';
+                }
+            } else {
+                codeSuggestions.style.display = 'none';
+            }
+        });
+
+        function selectCode(code) {
+            const currentInput = icdCodesInput.value;
+            const codes = currentInput.split(',').map(c => c.trim()).filter(c => c);
+            
+            // Replace the last incomplete code or add new code
+            if (codes.length === 0 || currentInput.endsWith(',') || currentInput.endsWith(', ')) {
+                codes.push(code);
+            } else {
+                codes[codes.length - 1] = code;
+            }
+            
+            icdCodesInput.value = codes.join(', ') + ', ';
+            codeSuggestions.style.display = 'none';
+            icdCodesInput.focus();
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.input-group')) {
+                codeSuggestions.style.display = 'none';
+            }
+        });
+
+        // Form submission
+        analysisForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const codes = icdCodesInput.value.trim();
+            if (!codes) {
+                showAlert('Please enter at least one ICD code.', 'danger');
+                return;
+            }
+
+            // Count codes
+            const codeCount = codes.split(',').map(c => c.trim()).filter(c => c).length;
+            if (codeCount < 2) {
+                showAlert('Please enter at least 2 ICD codes to generate meaningful patterns (minimum 2 diseases per pattern).', 'warning');
+                return;
+            }
+
+            // Show loading
+            loadingSpinner.style.display = 'block';
+            resultsSection.style.display = 'none';
+            exportBtn.style.display = 'none';
+            clearAlerts();
+
+            // Submit analysis
+            const formData = new FormData();
+            formData.append('codes', codes);
+
+            fetch('/analyze', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingSpinner.style.display = 'none';
+                
+                if (data.success) {
+                    displayResults(data);
+                    exportBtn.style.display = 'inline-block';
+                } else {
+                    showAlert(data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                loadingSpinner.style.display = 'none';
+                showAlert('An error occurred during analysis. Please try again.', 'danger');
+                console.error('Error:', error);
+            });
+        });
+
+        // Export functionality
+        exportBtn.addEventListener('click', function() {
+            const codes = icdCodesInput.value.trim();
+            if (!codes) {
+                showAlert('Please enter ICD codes first.', 'warning');
+                return;
+            }
+
+            showAlert('Generating Excel report... This may take a moment.', 'info');
+
+            // Create a form to submit export request
+            const exportForm = document.createElement('form');
+            exportForm.method = 'POST';
+            exportForm.action = '/export_excel';
+            
+            const codesInput = document.createElement('input');
+            codesInput.type = 'hidden';
+            codesInput.name = 'codes';
+            codesInput.value = codes;
+            
+            exportForm.appendChild(codesInput);
+            document.body.appendChild(exportForm);
+            exportForm.submit();
+            document.body.removeChild(exportForm);
+        });
+
+        function displayResults(data) {
+            const resultsSummary = document.getElementById('resultsSummary');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            // Show invalid codes warning if any
+            if (data.invalid_codes && data.invalid_codes.length > 0) {
+                showAlert(`⚠️ Warning: These codes were not found in the dataset: ${data.invalid_codes.join(', ')}`, 'warning');
+            }
+
+            // Show filtering information
+            if (data.filtering_applied) {
+                showAlert(`🔍 Analysis completed with filtering: ${data.filtering_applied.confidence_filter}, ${data.filtering_applied.min_patients_with_disease} min patients, ${data.filtering_applied.min_pattern_size} min pattern size`, 'info');
+            }
+
+            // Display summary
+            resultsSummary.innerHTML = `
+                <div class="result-card">
+                    <div class="value">${data.summary.total_patterns}</div>
+                    <div class="label">Patterns Found</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${data.summary.total_outcomes}</div>
+                    <div class="label">Possible Outcomes</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${(data.summary.highest_probability * 100).toFixed(1)}%</div>
+                    <div class="label">Highest Probability</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${(data.summary.average_probability * 100).toFixed(1)}%</div>
+                    <div class="label">Average Probability</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${data.summary.total_high_confidence}</div>
+                    <div class="label">High Confidence</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${data.summary.total_medium_confidence}</div>
+                    <div class="label">Medium Confidence</div>
+                </div>
+            `;
+
+            // Display detailed results
+            let resultsHTML = '<h3>🎯 Top Disease Predictions</h3>';
+            
+            if (data.all_predictions && data.all_predictions.length > 0) {
+                resultsHTML += `
+                    <div class="table-container">
+                        <table class="predictions-table">
+                            <thead>
+                                <tr>
+                                    <th>Pattern</th>
+                                    <th>Predicted Disease</th>
+                                    <th>Probability</th>
+                                    <th>Evidence</th>
+                                    <th>Confidence</th>
+                                    ${data.summary.hcc_mapping_available ? '<th>HCC V24</th><th>HCC V28</th><th>HCC ESRD</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.all_predictions.slice(0, 50).forEach(pred => {
+                    const confidenceClass = `confidence-${pred.confidence.toLowerCase().replace(' ', '-')}`;
+                    resultsHTML += `
+                        <tr>
+                            <td><strong>${pred.pattern}</strong><br><small>Size: ${pred.pattern_size}</small></td>
+                            <td><code>${pred.predicts}</code></td>
+                            <td>
+                                <div><strong>${(pred.probability * 100).toFixed(1)}%</strong></div>
+                                <div class="probability-bar">
+                                    <div class="probability-fill" style="width: ${pred.probability * 100}%"></div>
+                                </div>
+                            </td>
+                            <td>${pred.evidence}<br><small>${pred.patients_with_disease} patients</small></td>
+                            <td><span class="confidence-badge ${confidenceClass}">${pred.confidence}</span></td>
+                    `;
+                    
+                    if (data.summary.hcc_mapping_available) {
+                        resultsHTML += `
+                            <td class="hcc-column">
+                                <span class="hcc-value">${pred.hcc_v24 || 'N/A'}</span>
+                            </td>
+                            <td class="hcc-column">
+                                <span class="hcc-value">${pred.hcc_v28 || 'N/A'}</span>
+                            </td>
+                            <td class="hcc-column">
+                                <span class="hcc-value">${pred.hcc_esrd_v24 || 'N/A'}</span>
+                            </td>
+                        `;
+                    }
+                    
+                    resultsHTML += '</tr>';
+                });
+                
+                resultsHTML += '</tbody></table></div>';
+                
+                if (data.all_predictions.length > 50) {
+                    resultsHTML += `<p><em>Showing top 50 results out of ${data.all_predictions.length} total predictions. Export to Excel for complete results.</em></p>`;
+                }
+            } else {
+                resultsHTML += `
+                    <div class="no-results">
+                        <i>🔍</i>
+                        <h3>No predictions found</h3>
+                        <p>No patterns with the required criteria were found for the given ICD codes.</p>
+                        <p>Try with different codes or check the filtering criteria.</p>
+                    </div>
+                `;
+            }
+
+            resultsContent.innerHTML = resultsHTML;
+            resultsSection.style.display = 'block';
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message;
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto-remove info alerts after 5 seconds
+            if (type === 'info') {
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 5000);
+            }
+        }
+
+        function clearAlerts() {
+            alertContainer.innerHTML = '';
+        }
+
+        // Initialize with some helpful tips
+        // Initialize with some helpful tips
+        window.addEventListener('load', function() {
+            showAlert('📝 Welcome! Enter ICD codes to analyze disease patterns and probabilities.', 'info');
+        });
+    </script>
+</body>
+</html>
