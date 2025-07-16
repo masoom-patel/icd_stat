@@ -1,3 +1,11 @@
 flask
 pandas
 openpyxl
+sentence-transformers
+lightgbm
+scikit-learn
+transformers
+torch
+numpy
+matplotlib
+seaborn
