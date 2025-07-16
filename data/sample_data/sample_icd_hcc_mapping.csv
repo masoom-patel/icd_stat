@@ -1,0 +1,28 @@
+ICDCode,Description,HCC_V24,HCC_V28,HCC_ESRD_V24
+E10.9,Type 1 diabetes mellitus without complications,17.0,37.0,17.0
+E11.9,Type 2 diabetes mellitus without complications,19.0,38.0,19.0
+I10,Essential hypertension,,,
+I25.9,Chronic ischemic heart disease,83.0,186.0,83.0
+I50.9,"Heart failure, unspecified",85.0,188.0,85.0
+I48.91,Unspecified atrial fibrillation,96.0,195.0,96.0
+J44.1,Chronic obstructive pulmonary disease with acute exacerbation,111.0,276.0,111.0
+J45.9,"Asthma, unspecified",,,
+J96.90,"Respiratory failure, unspecified, unspecified with hypoxia or hypercapnia",84.0,187.0,84.0
+N18.9,"Chronic kidney disease, unspecified",137.0,326.0,137.0
+N17.9,"Acute kidney failure, unspecified",135.0,324.0,135.0
+F32.9,"Major depressive disorder, single episode, unspecified",58.0,151.0,58.0
+F33.9,"Major depressive disorder, recurrent, unspecified",58.0,151.0,58.0
+C78.0,Secondary malignant neoplasm of lung,8.0,17.0,8.0
+C79.9,Secondary malignant neoplasm of unspecified site,8.0,17.0,8.0
+C25.9,"Malignant neoplasm of pancreas, unspecified",8.0,17.0,8.0
+E78.5,"Hyperlipidemia, unspecified",,,
+K21.9,Gastro-esophageal reflux disease without esophagitis,,,
+M79.3,"Panniculitis, unspecified",,,
+G47.33,Obstructive sleep apnea (adult) (pediatric),77.0,180.0,77.0
+H36.0,Diabetic retinopathy,18.0,37.0,18.0
+N08.3,Glomerular disorders in diabetes mellitus,18.0,37.0,18.0
+A41.9,"Sepsis, unspecified organism",2.0,2.0,2.0
+R65.20,Severe sepsis without septic shock,2.0,2.0,2.0
+R50.9,"Fever, unspecified",,,
+R53.83,Other fatigue,,,
+R06.02,Shortness of breath,,,

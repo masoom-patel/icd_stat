@@ -41,18 +41,7 @@ class ModelConfig:
                 "cluster_overlap",
                 "embedding_variance"
             ]
-    
-    # Rule Engine Configuration
-    enable_rules: bool = True
-    rule_confidence_threshold: float = 0.7
-    
-    # ML Model Configuration
-    primary_model: str = "lightgbm"  # "lightgbm", "mlp", "transformer"
-    
-    # LightGBM Parameters
-    lgb_params: Dict[str, Any] = None
-    
-    def __post_init__(self):
+        
         if self.lgb_params is None:
             self.lgb_params = {
                 'objective': 'binary',
@@ -66,16 +55,37 @@ class ModelConfig:
                 'verbose': -1,
                 'random_state': 42
             }
+        
+        if self.mlp_hidden_sizes is None:
+            self.mlp_hidden_sizes = [512, 256, 128]
+        
+        if self.evaluation_metrics is None:
+            self.evaluation_metrics = [
+                "accuracy_at_k",
+                "map_at_k", 
+                "recall_at_k",
+                "hit_rate",
+                "ndcg_at_k"
+            ]
+        
+        if self.evaluation_k_values is None:
+            self.evaluation_k_values = [5, 10, 15, 20]
+    
+    # Rule Engine Configuration
+    enable_rules: bool = True
+    rule_confidence_threshold: float = 0.7
+    
+    # ML Model Configuration
+    primary_model: str = "lightgbm"  # "lightgbm", "mlp", "transformer"
+    
+    # LightGBM Parameters
+    lgb_params: Dict[str, Any] = None
     
     # MLP Parameters
     mlp_hidden_sizes: List[int] = None
     mlp_learning_rate: float = 0.001
     mlp_epochs: int = 100
     mlp_batch_size: int = 256
-    
-    def __post_init__(self):
-        if self.mlp_hidden_sizes is None:
-            self.mlp_hidden_sizes = [512, 256, 128]
     
     # Training Configuration
     train_test_split_ratio: float = 0.8
@@ -92,21 +102,7 @@ class ModelConfig:
     # Evaluation Configuration
     evaluation_metrics: List[str] = None
     
-    def __post_init__(self):
-        if self.evaluation_metrics is None:
-            self.evaluation_metrics = [
-                "accuracy_at_k",
-                "map_at_k", 
-                "recall_at_k",
-                "hit_rate",
-                "ndcg_at_k"
-            ]
-    
     evaluation_k_values: List[int] = None
-    
-    def __post_init__(self):
-        if self.evaluation_k_values is None:
-            self.evaluation_k_values = [5, 10, 15, 20]
     
     # File Paths
     data_dir: str = "data"

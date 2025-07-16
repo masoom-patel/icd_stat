@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Disease Prediction Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .system-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-card {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .status-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-indicator.active {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.inactive {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
+        .input-section {
+            background: linear-gradient(45deg, #f8f9fa, #ffffff);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+        }
+
+        .input-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .method-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .method-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .method-option:hover {
+            border-color: #667eea;
+        }
+
+        .method-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .results-section {
+            background: linear-gradient(45deg, #f8f9fa, #ffffff);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-card h4 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .summary-card p {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .predictions-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .prediction-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s;
+        }
+
+        .prediction-card:hover {
+            transform: translateX(5px);
+        }
+
+        .prediction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .prediction-code {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .prediction-type {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
+        .prediction-description {
+            color: #495057;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .prediction-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            display: block;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .metric-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+
+        .confidence-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+            transition: width 0.5s ease;
+        }
+
+        .rule-explanations {
+            margin-top: 15px;
+        }
+
+        .rule-explanation {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid #28a745;
+        }
+
+        .rule-explanation strong {
+            color: #2c3e50;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 20px;
+        }
+
+        .demographic-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .export-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Hybrid Disease Prediction System</h1>
+            <p>Advanced AI-powered disease prediction with medical reasoning</p>
+        </div>
+
+        <!-- System Status -->
+        <div class="system-status">
+            <div class="status-card">
+                <h3>
+                    <span class="status-indicator {{ 'active' if data_loaded else 'inactive' }}"></span>
+                    Legacy System
+                </h3>
+                <div>
+                    <strong>Patients:</strong> {{ total_patients if data_loaded else 0 }}<br>
+                    <strong>Records:</strong> {{ total_records if data_loaded else 0 }}<br>
+                    <strong>Unique ICDs:</strong> {{ unique_codes if data_loaded else 0 }}<br>
+                    <strong>HCC Mapping:</strong> {{ 'Yes' if hcc_mapping_loaded else 'No' }}
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <h3>
+                    <span class="status-indicator {{ 'active' if hybrid_available else 'inactive' }}"></span>
+                    Hybrid AI System
+                </h3>
+                <div id="hybrid-status">
+                    {% if hybrid_available %}
+                        <strong>Status:</strong> Ready<br>
+                        <strong>ML Model:</strong> Trained<br>
+                        <strong>Embeddings:</strong> Loaded<br>
+                        <strong>Rules:</strong> Active
+                    {% else %}
+                        <strong>Status:</strong> Initializing<br>
+                        <strong>ML Model:</strong> Training<br>
+                        <strong>Embeddings:</strong> Loading<br>
+                        <strong>Rules:</strong> Loading
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <h2>🔍 Disease Prediction Analysis</h2>
+            
+            <!-- Method Selection -->
+            <div class="method-selector">
+                <div class="method-option selected" data-method="hybrid">
+                    <input type="radio" name="method" value="hybrid" checked>
+                    <label>🤖 Hybrid AI System</label>
+                </div>
+                <div class="method-option" data-method="legacy">
+                    <input type="radio" name="method" value="legacy">
+                    <label>📊 Legacy Statistical Analysis</label>
+                </div>
+            </div>
+
+            <form id="analysisForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="codes">ICD Codes (comma-separated)</label>
+                        <input type="text" id="codes" name="codes" 
+                               placeholder="E.g., I10, E11.9, J44.1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="age">Age (optional)</label>
+                        <input type="number" id="age" name="age" min="0" max="120" 
+                               placeholder="65">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender">Gender (optional)</label>
+                        <select id="gender" name="gender">
+                            <option value="">Select</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            🚀 Analyze
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>Analyzing disease patterns...</p>
+            </div>
+            
+            <div id="resultsContent" style="display: none;">
+                <div class="results-header">
+                    <h2>📈 Prediction Results</h2>
+                    <div class="export-section">
+                        <button class="btn btn-secondary" onclick="exportResults()">
+                            📄 Export to Excel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Demographics Info -->
+                <div class="demographic-info" id="demographicInfo" style="display: none;">
+                    <strong>Patient Demographics:</strong>
+                    <span id="demographicDetails"></span>
+                </div>
+
+                <!-- Results Summary -->
+                <div class="results-summary" id="resultsSummary">
+                    <!-- Summary cards will be populated by JavaScript -->
+                </div>
+
+                <!-- Predictions Grid -->
+                <div class="predictions-grid" id="predictionsGrid">
+                    <!-- Prediction cards will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentResults = null;
+
+        // Method selection
+        document.querySelectorAll('.method-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.method-option').forEach(opt => 
+                    opt.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+
+        // Form submission
+        document.getElementById('analysisForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const codes = document.getElementById('codes').value.trim();
+            const age = document.getElementById('age').value.trim();
+            const gender = document.getElementById('gender').value;
+            const method = document.querySelector('input[name="method"]:checked').value;
+            
+            if (!codes) {
+                alert('Please enter at least one ICD code');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('resultsContent').style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('codes', codes);
+                formData.append('age', age);
+                formData.append('gender', gender);
+                formData.append('method', method);
+
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentResults = result;
+                    displayResults(result);
+                } else {
+                    displayError(result.error);
+                }
+            } catch (error) {
+                displayError('An error occurred during analysis: ' + error.message);
+            }
+
+            // Hide loading
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('resultsContent').style.display = 'block';
+        });
+
+        function displayResults(results) {
+            // Update demographic info
+            if (results.demographics && (results.demographics.age || results.demographics.gender)) {
+                const demoInfo = document.getElementById('demographicInfo');
+                const demoDetails = document.getElementById('demographicDetails');
+                
+                let details = [];
+                if (results.demographics.age) details.push(`Age: ${results.demographics.age}`);
+                if (results.demographics.gender) details.push(`Gender: ${results.demographics.gender}`);
+                
+                demoDetails.textContent = details.join(', ');
+                demoInfo.style.display = 'block';
+            }
+
+            // Update summary
+            updateSummary(results);
+
+            // Display predictions
+            displayPredictions(results.results || []);
+        }
+
+        function updateSummary(results) {
+            const summaryContainer = document.getElementById('resultsSummary');
+            summaryContainer.innerHTML = '';
+
+            const predictions = results.results || [];
+            const analysisType = results.analysis_type || 'unknown';
+            
+            const summaryData = [
+                {
+                    title: predictions.length,
+                    subtitle: 'Predictions'
+                },
+                {
+                    title: results.valid_codes ? results.valid_codes.length : 0,
+                    subtitle: 'Valid ICDs'
+                },
+                {
+                    title: analysisType.toUpperCase(),
+                    subtitle: 'Analysis Method'
+                }
+            ];
+
+            if (predictions.length > 0) {
+                const avgProb = predictions.reduce((sum, p) => sum + (p.probability || 0), 0) / predictions.length;
+                summaryData.push({
+                    title: (avgProb * 100).toFixed(1) + '%',
+                    subtitle: 'Avg Probability'
+                });
+            }
+
+            summaryData.forEach(data => {
+                const card = document.createElement('div');
+                card.className = 'summary-card';
+                card.innerHTML = `
+                    <h4>${data.title}</h4>
+                    <p>${data.subtitle}</p>
+                `;
+                summaryContainer.appendChild(card);
+            });
+        }
+
+        function displayPredictions(predictions) {
+            const container = document.getElementById('predictionsGrid');
+            container.innerHTML = '';
+
+            if (predictions.length === 0) {
+                container.innerHTML = '<p>No predictions found.</p>';
+                return;
+            }
+
+            predictions.forEach((pred, index) => {
+                const card = document.createElement('div');
+                card.className = 'prediction-card';
+                
+                const probability = pred.probability || 0;
+                const confidence = pred.confidence_score || probability;
+                const rank = pred.rank || (index + 1);
+                
+                let metricsHtml = `
+                    <div class="metric">
+                        <span class="metric-value">#${rank}</span>
+                        <span class="metric-label">Rank</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">${(probability * 100).toFixed(1)}%</span>
+                        <span class="metric-label">Probability</span>
+                    </div>
+                `;
+                
+                if (confidence !== probability) {
+                    metricsHtml += `
+                        <div class="metric">
+                            <span class="metric-value">${(confidence * 100).toFixed(1)}%</span>
+                            <span class="metric-label">Confidence</span>
+                        </div>
+                    `;
+                }
+
+                let rulesHtml = '';
+                if (pred.rule_explanations && pred.rule_explanations.length > 0) {
+                    rulesHtml = '<div class="rule-explanations"><strong>Medical Rules:</strong>';
+                    pred.rule_explanations.forEach(rule => {
+                        rulesHtml += `
+                            <div class="rule-explanation">
+                                <strong>${rule.rule_name}:</strong> ${rule.description}
+                                (Confidence: ${(rule.confidence * 100).toFixed(0)}%)
+                            </div>
+                        `;
+                    });
+                    rulesHtml += '</div>';
+                }
+
+                card.innerHTML = `
+                    <div class="prediction-header">
+                        <div class="prediction-code">${pred.predicted_code || pred.code}</div>
+                        <div class="prediction-type">${pred.type || 'ICD'}</div>
+                    </div>
+                    <div class="prediction-description">
+                        ${pred.description || 'No description available'}
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${probability * 100}%"></div>
+                    </div>
+                    <div class="prediction-metrics">
+                        ${metricsHtml}
+                    </div>
+                    ${rulesHtml}
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function displayError(message) {
+            const container = document.getElementById('predictionsGrid');
+            container.innerHTML = `
+                <div class="error-message">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+
+        async function exportResults() {
+            if (!currentResults) {
+                alert('No results to export');
+                return;
+            }
+
+            try {
+                const response = await fetch('/export_excel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(currentResults)
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `disease_predictions_${new Date().toISOString().slice(0,10)}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert('Failed to export results');
+                }
+            } catch (error) {
+                alert('Error exporting results: ' + error.message);
+            }
+        }
+
+        // Refresh system status periodically
+        async function updateSystemStatus() {
+            try {
+                const response = await fetch('/system_status');
+                const status = await response.json();
+                
+                // Update hybrid system status
+                const hybridStatus = document.getElementById('hybrid-status');
+                if (status.hybrid_system.available) {
+                    const sys = status.hybrid_system.status;
+                    hybridStatus.innerHTML = `
+                        <strong>Status:</strong> Ready<br>
+                        <strong>ML Model:</strong> ${sys.scorer?.trained ? 'Trained' : 'Training'}<br>
+                        <strong>Embeddings:</strong> ${sys.embedder?.initialized ? 'Loaded' : 'Loading'}<br>
+                        <strong>Rules:</strong> ${sys.rule_engine?.rule_count || 0} rules
+                    `;
+                }
+            } catch (error) {
+                console.error('Failed to update system status:', error);
+            }
+        }
+
+        // Update status every 30 seconds
+        setInterval(updateSystemStatus, 30000);
+        
+        // Initial status update
+        updateSystemStatus();
+    </script>
+</body>
+</html>
