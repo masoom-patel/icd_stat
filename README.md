@@ -1,10 +1,7 @@
 # ICD Stat
 
 ![Stat-Based Dashboard](images/screenshot1.png)
-*Stat-based ICD statistics dashboard*
-
 ![LLM-Based Reasoning](images/screenshot2.png)
-*LLM-based reasoning and explainability*
 
 ## Overview
 
