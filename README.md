@@ -7,6 +7,8 @@
 
 **ICD Stat** is a web application designed to facilitate analysis and visualization of ICD (International Classification of Diseases) statistics. Built using Python and HTML, this project enables users to explore, filter, and display disease data interactively.
 
+NOTE: *This was performed on a small data*
+
 ## Features
 
 - Interactive dashboard for ICD statistics
