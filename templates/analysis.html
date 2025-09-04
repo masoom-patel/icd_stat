@@ -92,6 +92,14 @@
             border-left-color: #27ae60;
         }
 
+        .age-gender-status {
+            border-left-color: #f39c12;
+        }
+
+        .age-gender-status.available {
+            border-left-color: #27ae60;
+        }
+
         .analysis-section {
             background: white;
             border-radius: 15px;
@@ -305,12 +313,26 @@
             top: 0;
             z-index: 10;
         }
+
         .code-suggestion.highlighted {
             background-color: #667eea;
             color: white;
         }
+
         .predictions-table tr:hover {
             background: #f8f9fa;
+        }
+
+        .clickable-pattern {
+            cursor: pointer;
+            color: #667eea;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        .clickable-pattern:hover {
+            color: #764ba2;
+            background-color: #f8f9fa;
         }
 
         .probability-bar {
@@ -475,6 +497,157 @@
             color: #bdc3c7;
         }
 
+        /* Age-Gender Analysis Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .modal-title {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .age-analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .age-bucket-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            text-align: center;
+        }
+
+        .age-bucket-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .age-bucket-count {
+            font-size: 1.5em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .age-bucket-percentage {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .gender-analysis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .gender-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #e91e63;
+            text-align: center;
+        }
+
+        .insights-section {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .insights-title {
+            color: #1976d2;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .insight-item {
+            color: #424242;
+            margin-bottom: 5px;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .insight-item::before {
+            content: "💡";
+            position: absolute;
+            left: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #4caf50;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -502,6 +675,7 @@
             .predictions-table {
                 font-size: 0.8em;
             }
+
             .predictions-table td.description {
                 max-width: 300px;
                 white-space: nowrap;
@@ -517,9 +691,20 @@
                 background: #f8f9fa;
                 position: relative;
             }
+
             .predictions-table th,
             .predictions-table td {
                 padding: 8px 4px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 20px;
+            }
+
+            .age-analysis-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -529,7 +714,7 @@
         <div class="header">
             <button class="back-btn" onclick="window.location.href='/'">← Back to Upload</button>
             <h1>🏥 Disease Probability Analysis</h1>
-            <p>Advanced pattern analysis with HCC mapping and filtering criteria</p>
+            <p>Advanced pattern analysis with HCC mapping, filtering criteria, and age/gender insights</p>
         </div>
 
         {% if data_loaded %}
@@ -554,6 +739,11 @@
                 <div class="number">{% if hcc_mapping_loaded %}✓{% else %}✗{% endif %}</div>
                 <div class="label">{% if hcc_mapping_loaded %}Available{% else %}Not loaded{% endif %}</div>
             </div>
+            <div class="summary-card age-gender-status {% if has_age_gender_data %}available{% endif %}">
+                <h3>👥 Age & Gender</h3>
+                <div class="number">{% if has_age_gender_data %}✓{% else %}✗{% endif %}</div>
+                <div class="label">{% if has_age_gender_data %}Available{% else %}Not available{% endif %}</div>
+            </div>
         </div>
 
         <div class="analysis-section">
@@ -570,6 +760,9 @@
                     {% if hcc_mapping_loaded %}
                     <li>HCC mapping integration (CMS-HCC V24, V28, and ESRD models)</li>
                     {% endif %}
+                    {% if has_age_gender_data %}
+                    <li>Age & Gender analysis available (click on patterns for demographics)</li>
+                    {% endif %}
                 </ul>
             </div>
             
@@ -584,6 +777,7 @@
                     <small style="color: #7f8c8d; margin-top: 5px; display: block;">
                         💡 Type to search from {{ "{:,}".format(unique_codes) }} available codes. 
                         You can enter multiple codes separated by commas. Need at least 2 codes for meaningful patterns.
+                        {% if has_age_gender_data %}<br>🎯 Click on any pattern in results to view age & gender demographics.{% endif %}
                     </small>
                 </div>
                 
@@ -623,9 +817,26 @@
         {% endif %}
     </div>
 
+    <!-- Age & Gender Analysis Modal -->
+    <div id="ageGenderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">👥 Age & Gender Analysis</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div id="modalContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading age and gender analysis...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Available codes for autocomplete
         const availableCodes = {{ available_codes | tojson }};
+        const hasAgeGenderData = {{ has_age_gender_data | tojson }};
         let selectedSuggestionIndex = -1;
         let currentMatches = [];
         
@@ -637,6 +848,8 @@
         const resultsSection = document.getElementById('resultsSection');
         const alertContainer = document.getElementById('alertContainer');
         const exportBtn = document.getElementById('exportBtn');
+        const ageGenderModal = document.getElementById('ageGenderModal');
+        const modalContent = document.getElementById('modalContent');
 
         // Autocomplete functionality
         icdCodesInput.addEventListener('input', function() {
@@ -666,6 +879,7 @@
                 selectedSuggestionIndex = -1;
             }
         });
+
         icdCodesInput.addEventListener('keydown', function(e) {
             if (codeSuggestions.style.display === 'block' && currentMatches.length > 0) {
                 switch(e.key) {
@@ -696,6 +910,7 @@
                 }
             }
         });
+
         function updateSuggestionHighlight() {
             const suggestions = codeSuggestions.querySelectorAll('.code-suggestion');
             suggestions.forEach((suggestion, index) => {
@@ -724,6 +939,7 @@
             selectedSuggestionIndex = -1;
             icdCodesInput.focus();
         }
+
         // Hide suggestions when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.input-group')) {
@@ -732,6 +948,142 @@
                 selectedSuggestionIndex = -1;
             }
         });
+
+        // Modal functionality
+        const closeModal = document.querySelector('.close');
+        closeModal.onclick = function() {
+            ageGenderModal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == ageGenderModal) {
+                ageGenderModal.style.display = 'none';
+            }
+        }
+
+        // Pattern click handler for age/gender analysis
+        function analyzePatternDemographics(pattern) {
+            if (!hasAgeGenderData) {
+                showAlert('Age and gender data not available in the dataset.', 'warning');
+                return;
+            }
+
+            ageGenderModal.style.display = 'block';
+            modalContent.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading age and gender analysis for pattern: ${pattern}</p>
+                </div>
+            `;
+
+            fetch('/pattern_analysis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ pattern: pattern })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayAgeGenderAnalysis(data);
+                } else {
+                    modalContent.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                modalContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> Failed to load age and gender analysis.
+                    </div>
+                `;
+                console.error('Error:', error);
+            });
+        }
+
+        function displayAgeGenderAnalysis(data) {
+            const ageBuckets = ['0-25', '25-50', '50-65', '65-75', '75-85', '85-95', '95+'];
+            
+            let ageCardsHTML = '';
+            ageBuckets.forEach(bucket => {
+                const count = data.age_distribution[bucket] || 0;
+                const percentage = data.age_percentages[bucket] || 0;
+                ageCardsHTML += `
+                    <div class="age-bucket-card">
+                        <div class="age-bucket-title">${bucket} years</div>
+                        <div class="age-bucket-count">${count}</div>
+                        <div class="age-bucket-percentage">${percentage.toFixed(1)}%</div>
+                    </div>
+                `;
+            });
+
+            let genderCardsHTML = '';
+            Object.entries(data.gender_distribution).forEach(([gender, count]) => {
+                const percentage = data.gender_percentages[gender] || 0;
+                genderCardsHTML += `
+                    <div class="gender-card">
+                        <div class="age-bucket-title">${gender}</div>
+                        <div class="age-bucket-count">${count}</div>
+                        <div class="age-bucket-percentage">${percentage.toFixed(1)}%</div>
+                    </div>
+                `;
+            });
+
+            let insightsHTML = '';
+            data.insights.forEach(insight => {
+                insightsHTML += `<div class="insight-item">${insight}</div>`;
+            });
+
+            modalContent.innerHTML = `
+                <div>
+                    <h3>📊 Pattern: ${data.pattern}</h3>
+                    <p><strong>Total Patients:</strong> ${data.total_patients}</p>
+                    
+                    <h4>📅 Age Distribution</h4>
+                    <div class="age-analysis-grid">
+                        ${ageCardsHTML}
+                    </div>
+
+                    <h4>👥 Gender Distribution</h4>
+                    <div class="gender-analysis">
+                        ${genderCardsHTML}
+                    </div>
+
+                    <h4>📈 Age Statistics</h4>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.age_statistics.mean}</div>
+                            <div class="stat-label">Mean Age</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.age_statistics.median}</div>
+                            <div class="stat-label">Median Age</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.age_statistics.min}</div>
+                            <div class="stat-label">Min Age</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.age_statistics.max}</div>
+                            <div class="stat-label">Max Age</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.age_statistics.range}</div>
+                            <div class="stat-label">Age Range</div>
+                        </div>
+                    </div>
+
+                    <div class="insights-section">
+                        <div class="insights-title">🔍 Key Insights</div>
+                        ${insightsHTML}
+                    </div>
+                </div>
+            `;
+        }
 
         // Form submission
         analysisForm.addEventListener('submit', function(e) {
@@ -819,7 +1171,7 @@
 
             // Show filtering information
             if (data.filtering_applied) {
-                showAlert(`🔍 Analysis completed with filtering: ${data.filtering_applied.confidence_filter}, ${data.filtering_applied.min_patients_with_disease} min patients, ${data.filtering_applied.min_pattern_size} min pattern size`, 'info');
+                showAlert(`🔍 Analysis completed with filtering: ${data.filtering_applied.confidence_filter}, ${data.filtering_applied.min_patients_with_disease} min patients, ${data.filtering_applied.deduplication}`, 'info');
             }
 
             // Display summary
@@ -851,7 +1203,15 @@
             `;
 
             // Display detailed results
-            let resultsHTML = '<h3>🎯 Top Disease Predictions</h3>';
+            let resultsHTML = `<h3>🎯 Top Disease Predictions</h3>`;
+            
+            if (hasAgeGenderData) {
+                resultsHTML += `
+                    <div class="alert alert-info">
+                        👥 <strong>Age & Gender Analysis Available:</strong> Click on any pattern below to view detailed age and gender demographics for that pattern.
+                    </div>
+                `;
+            }
             
             if (data.all_predictions && data.all_predictions.length > 0) {
                 resultsHTML += `
@@ -859,7 +1219,7 @@
                         <table class="predictions-table">
                             <thead>
                                 <tr>
-                                    <th>Pattern</th>
+                                    <th>Pattern ${hasAgeGenderData ? '(Click for Demographics)' : ''}</th>
                                     <th>Predicted Disease</th>
                                     <th>Description</th>
                                     <th>Probability</th>
@@ -873,9 +1233,18 @@
                 
                 data.all_predictions.slice(0, 50).forEach(pred => {
                     const confidenceClass = `confidence-${pred.confidence.toLowerCase().replace(' ', '-')}`;
+                    const patternClass = hasAgeGenderData ? 'clickable-pattern' : '';
+                    const patternClick = hasAgeGenderData ? `onclick="analyzePatternDemographics('${pred.pattern}')"` : '';
+                    
                     resultsHTML += `
                         <tr>
-                            <td><strong>${pred.pattern}</strong><br><small>Size: ${pred.pattern_size}</small></td>
+                            <td>
+                                <span class="${patternClass}" ${patternClick}>
+                                    <strong>${pred.pattern}</strong>
+                                </span>
+                                <br><small>Size: ${pred.pattern_size}</small>
+                                ${hasAgeGenderData ? '<br><small style="color: #667eea;">👥 Click for demographics</small>' : ''}
+                            </td>
                             <td><code>${pred.predicts}</code></td>
                             <td class="description">${pred.description || 'N/A'}</td>
                             <td>
@@ -896,7 +1265,6 @@
                             <td class="hcc-column">
                                 <span class="hcc-value">${pred.hcc_v28 || 'N/A'}</span>
                             </td>
-                       
                             <td class="hcc-column">
                                 <span class="hcc-value">${pred.hcc_esrd_v24 || 'N/A'}</span>
                             </td>
@@ -947,9 +1315,12 @@
         }
 
         // Initialize with some helpful tips
-        // Initialize with some helpful tips
         window.addEventListener('load', function() {
-            showAlert('📝 Welcome! Enter ICD codes to analyze disease patterns and probabilities.', 'info');
+            let welcomeMessage = '📝 Welcome! Enter ICD codes to analyze disease patterns and probabilities.';
+            if (hasAgeGenderData) {
+                welcomeMessage += ' Click on patterns in results to view age & gender demographics.';
+            }
+            showAlert(welcomeMessage, 'info');
         });
     </script>
 </body>
